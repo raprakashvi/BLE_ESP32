@@ -1,0 +1,127 @@
+
+//Import libraries
+
+#include <BLEDevice.h>
+#include <BLEUtils.h>
+#include <BLEServer.h>
+#include <BLE2902.h> // Helps control "Notify" on/off using the nrfConnect app.
+#include<Wire.h> // For I2C communication with accelerometer
+
+//Declare constants and variables
+const int MPU_addr=0x68;  // I2C address of the MPU-6050
+int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ; // int16_t creates 16 bit integer variables
+int i=0;
+byte flags = 0b00111110;
+byte bpm;
+byte heart[8] = { 0b00001110, 60, 0, 0, 0 , 0, 0, 0}; 
+// Array of data sent to the receiving client
+//Defined by the Bluetooth organization that these 8 bytes are for heart rate characteristics
+
+byte hrmPos[1] = {2}; // Position for wrist
+bool _BLEClientConnected = false; //Default value
+
+//Service
+#define heartRateService BLEUUID((uint16_t)0x180D) // A shorter way to define the heart rate service 
+//Characteristics
+BLECharacteristic heartRateMeasurementCharacteristics(BLEUUID((uint16_t)0x2A37), BLECharacteristic::PROPERTY_NOTIFY);
+BLECharacteristic sensorPositionCharacteristic(BLEUUID((uint16_t)0x2A38), BLECharacteristic::PROPERTY_READ);
+//Descriptors
+BLEDescriptor heartRateDescriptor(BLEUUID((uint16_t)0x2901));
+BLEDescriptor sensorPositionDescriptor(BLEUUID((uint16_t)0x2901));
+
+//Connected-Disconnected status change function
+class MyServerCallbacks : public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer) {
+      _BLEClientConnected = true;
+    };
+
+    void onDisconnect(BLEServer* pServer) {
+      _BLEClientConnected = false;
+    }
+};
+
+void InitBLE() {
+  // Decide device name, here "Heya"
+  BLEDevice::init("Heya"); 
+  // Create the BLE Server
+  BLEServer *pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
+
+  // Create the BLE Service
+  BLEService *pHeart = pServer->createService(heartRateService);
+
+  pHeart->addCharacteristic(&heartRateMeasurementCharacteristics);
+  heartRateDescriptor.setValue("Current rate showed here");
+  heartRateMeasurementCharacteristics.addDescriptor(&heartRateDescriptor);
+  heartRateMeasurementCharacteristics.addDescriptor(new BLE2902()); 
+//BLE2902 allows us to stop receiving data from the BLE device thus conserving energy. Basically prevents constant "notify"
+
+  pHeart->addCharacteristic(&sensorPositionCharacteristic);
+  sensorPositionDescriptor.setValue("Position 0 - 1000 Hz"); // User defined value to be displayed
+  sensorPositionCharacteristic.addDescriptor(&sensorPositionDescriptor); //these characteristics are defined earlier
+  
+  pServer->getAdvertising()->addServiceUUID(heartRateService);
+  pHeart->start();
+  // Start advertising
+  pServer->getAdvertising()->start();
+}
+
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Start");
+  InitBLE();
+  bpm = 1; //temp
+
+  //MPU6050 things
+  Wire.begin();
+  Wire.beginTransmission(MPU_addr);
+  Wire.write(0x6B);  // PWR_MGMT_1 register
+  Wire.write(0);     // set to zero (wakes up the MPU-6050)
+  Wire.endTransmission(true);
+
+  
+}
+
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  //MPU6050 stuff_ sending data to the microcontroller
+  Wire.beginTransmission(MPU_addr);
+  Wire.write(0x3B);  // starting with register 0x3B (ACCEL_XOUT_H)
+  Wire.endTransmission(false);
+  Wire.requestFrom(MPU_addr,14,true);  // request a total of 14 registers
+  AcX=Wire.read()<<8|Wire.read();  // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)    
+  //Using only x axis data for now
+  //AcY=Wire.read()<<8|Wire.read();  // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
+
+  AcX=bpm; //Garbage. Del later
+  Serial.print(i++);
+  Serial.print(".");  
+  Serial.print(AcX);
+  Serial.print(".");
+
+  heart[1] = (byte)AcX;
+  int energyUsed = 2500;
+  heart[3] = energyUsed / 256;
+  heart[2] = energyUsed - (heart[2] * 256);
+  Serial.println(AcX);
+  
+ /* heart[1] = (byte)bpm;
+  int energyUsed = 3000;
+  heart[3] = energyUsed / 256;
+  heart[2] = energyUsed - (heart[2] * 256);
+  Serial.println(bpm); */
+
+ // setting the value and giving the length of the array it seems
+//Put the values here that you want to broadcast to the phone
+
+  heartRateMeasurementCharacteristics.setValue(heart, 8);
+  heartRateMeasurementCharacteristics.notify();
+
+  sensorPositionCharacteristic.setValue(hrmPos, 1);
+  bpm++;
+
+  delay(2000);
+}
