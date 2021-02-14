@@ -2,7 +2,7 @@
 
 ## ESP32 : 
 
-- [Fake Heartrate Sensor] (..raprakashviBLE_ESP32/server_fake_heartrate)
+- [Fake Heartrate Sensor] (..raprakashvi/BLE_ESP32/server_fake_heartrate)
   - Uses heart rate measurement UUID and updates the display number by 1 every second. 
   - Good to learn about characteristics and descriptors and general BLE stuff
   
