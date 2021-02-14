@@ -16,4 +16,4 @@ Arduino :
   - Plots real time graph from MPU6050 data
   
  
- [Markdown Cheatsheet] (https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
+ [Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
