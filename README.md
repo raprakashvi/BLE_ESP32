@@ -10,7 +10,7 @@
   - Pushes X axis acceleration data using heartrate measurement UUID
   - Combines MPU6050 code with BLE server
   
-Arduino : 
+### Arduino : 
  #### MPU6050 [File: mpu6050_arduino]
   - MPU6050 code for accessing all the sensors
   
