@@ -5,6 +5,7 @@
   Fake Heartrate Sensor [File: server_fake_heartrate]
   - Uses heart rate measurement UUID and updates the display number by 1 every second. 
   - Good to learn about characteristics and descriptors and general BLE stuff
+  
   Fake Heartrate Sensor [File: server_mpu6050_heartrate_fake]
   - Pushes X axis acceleration data using heartrate measurement UUID
   - Combines MPU6050 code with BLE server
