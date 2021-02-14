@@ -8,3 +8,5 @@
   
 Arduino : 
   - MPU6050 code for accessing all the sensors
+  
+  [I'm a relative reference to a repository file](../blob/master/LICENSE)
