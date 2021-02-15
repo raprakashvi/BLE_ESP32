@@ -10,7 +10,7 @@
   - Pushes X axis acceleration data using heartrate measurement UUID
   - Combines MPU6050 code with BLE server
   
-  ### Accelerometer_MPU6050 [File: MPU6050_temp.ino]
+  #### Accelerometer_MPU6050 [File: MPU6050_temp.ino]
   - Uses custom characteristics to send X axis acceleration data to client 
   - Sends sensor body position and sensor location 
   - Ok to use directly with minor modifications
