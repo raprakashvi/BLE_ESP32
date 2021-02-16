@@ -16,7 +16,7 @@
 
 const int MPU_addr = 0x68; // I2C address of the MPU-6050
 int16_t AcX, AcY, AcZ, Tmp, GyX, GyY, GyZ;
-byte bpm; // placeholder dummy variable
+
 byte acc[3] = {1, 20, 300 }; // 3 axis of acceleration X,Y,Z
 byte senPos[1] = {1}; // 1 for "chest", 2 for "wrist" 
 int i=0;
@@ -81,7 +81,7 @@ void setup() {
   Serial.println("Starting now");
   InitBLE(); // Initializing BLE 
   
-  bpm = 1; //dummy variable
+ 
 
   //MPU6050 I2C configuration
   Wire.begin();
@@ -106,12 +106,13 @@ void loop() {
   
   //AcY=Wire.read()<<8|Wire.read();  // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
 
-  AcX = bpm; //dummy counter to be deleted
+
+  
   //Serial monitor output
   Serial.print(i++);
   Serial.print(".");
-  Serial.print(AcX);
-  Serial.println(".");
+  Serial.println(AcX);
+
  
 
   acc[0] = (byte)AcX;
@@ -124,7 +125,6 @@ void loop() {
   locnameCharacteristic.notify();
 
  sensorPositionCharacteristic.setValue(senPos, 1); 
-  bpm++;
-
+ 
   delay(2000);
 }
