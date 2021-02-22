@@ -2,6 +2,12 @@
 
 ### ESP32 : 
 
+  #### Graph Plotter from BLE data [File: Logger_Data_Post_Processing.ipynb]
+  - opens a text file
+  - filter out the extact acceleration data(X,Y,Z) that we need in String format
+  - convert the data to int
+  - plot a beautiful graph given the gathered data is beautiful
+  
   #### Fake Heartrate Sensor [File: server_fake_heartrate]
   - Uses heart rate measurement UUID and updates the display number by 1 every second. 
   - Good to learn about characteristics and descriptors and general BLE stuff
@@ -14,6 +20,7 @@
   - Uses custom characteristics to send X axis acceleration data to client 
   - Sends sensor body position and sensor location 
   - Ok to use directly with minor modifications
+  
   
 ### Arduino : 
  #### MPU6050 [File: mpu6050_arduino]
