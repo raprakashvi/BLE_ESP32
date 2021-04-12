@@ -1,0 +1,162 @@
+
+
+/*ESP32 and LIS3DH to a BLE Client
+  These libraries are developed by Neil Kolban for ESP32 to be used in Arduino IDE
+  And Adafruit LIS3DH breakout board
+  Acceleration data being sent to client in String due to being in Unknown Characteristic
+   02-14-2020
+   Ravi Prakash
+
+*/
+// Include these to create a server, utilize the BLE function
+#include <BLEDevice.h>
+#include <BLEUtils.h>
+#include <BLEServer.h>
+#include <BLE2902.h>
+#include <BLECharacteristic.h>
+#include<Wire.h>
+
+// Include these to use LIS3DH sensor
+#include <SPI.h>
+#include <Adafruit_LIS3DH.h>
+#include <Adafruit_Sensor.h>
+
+// Used for software SPI
+#define LIS3DH_CLK 13
+#define LIS3DH_MISO 12
+#define LIS3DH_MOSI 11
+// Used for hardware & software SPI
+#define LIS3DH_CS 10
+
+
+// software SPI
+//Adafruit_LIS3DH lis = Adafruit_LIS3DH(LIS3DH_CS, LIS3DH_MOSI, LIS3DH_MISO, LIS3DH_CLK);
+// hardware SPI
+//Adafruit_LIS3DH lis = Adafruit_LIS3DH(LIS3DH_CS);
+// I2C
+Adafruit_LIS3DH lis = Adafruit_LIS3DH();
+
+
+// variables to be used in this code
+int16_t acc[3] = {1, 20, 300 }; // 3 axis of acceleration X,Y,Z
+//byte senPos[1] = {1}; // 1 for "chest", 2 for "wrist"
+int i = 0;
+
+char cstr[16]; // to store the string converted value
+char str;
+bool _BLEClientConnected = false;
+
+// Defining custom service. Will be displayed as "Unknown Service"
+#define accXService BLEUUID((uint16_t)0x1600) 
+//BLE AccZ  Characteristic
+//Acceleration Z characteristic def
+BLECharacteristic accZCharacteristic(BLEUUID((uint16_t)0x1A02), BLECharacteristic::PROPERTY_NOTIFY ); 
+// Acceleration X descriptor def
+BLEDescriptor accZDescriptor(BLEUUID((uint16_t)0x2901)); 
+
+//Connected-Disconnected status update function
+class MyServerCallbacks : public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer) {
+      _BLEClientConnected = true;
+    };
+
+    void onDisconnect(BLEServer* pServer) {
+      _BLEClientConnected = false;
+    }
+};
+
+
+//Initializing BLE function
+void InitBLE() {
+  BLEDevice::init("rp_1"); // Decide device name, here "rp_1"
+  // Create the BLE Server
+  BLEServer *pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
+
+  // Create the BLE Service
+  BLEService *pacc = pServer->createService(accXService); // pacc is the pointer for Server created with accXService
+
+  pacc->addCharacteristic(&accZCharacteristic); // adding characteristic to the Service
+  accZDescriptor.setValue("Z Value"); // adding value to the descriptor for display
+  accZCharacteristic.addDescriptor(&accZDescriptor); //joining the descriptor "accXDescriptior" with the "accXCharacteristic"
+  accZCharacteristic.addDescriptor(new BLE2902()); //Add if using Notify
+
+  // Adding the Service for advertising
+  pServer->getAdvertising()->addServiceUUID(accXService); 
+  pacc->start(); //starting service
+  // Start advertising
+  pServer->getAdvertising()->start();
+}
+
+
+void setup() {
+  
+  Serial.begin(115200);  
+  Serial.println("Starting now");
+  InitBLE(); // Initializing BLE
+  Serial.println("LIS3DH test!");
+
+  if (! lis.begin(0x18)) {   // change this to 0x19 for alternative i2c address
+    Serial.println("Couldnt start");
+    while (1) yield();
+  }
+  Serial.println("LIS3DH found!");
+
+  // lis.setRange(LIS3DH_RANGE_4_G);   // 2, 4, 8 or 16 G!
+
+  Serial.print("Range = "); Serial.print(2 << lis.getRange());
+  Serial.println("G");
+
+  lis.setDataRate(LIS3DH_DATARATE_LOWPOWER_5KHZ);
+  // lis.setDataRate(LIS3DH_DATARATE_50_HZ);
+  Serial.print("Data rate set to: ");
+  switch (lis.getDataRate()) {
+    case LIS3DH_DATARATE_1_HZ: Serial.println("1 Hz"); break;
+    case LIS3DH_DATARATE_10_HZ: Serial.println("10 Hz"); break;
+    case LIS3DH_DATARATE_25_HZ: Serial.println("25 Hz"); break;
+    case LIS3DH_DATARATE_50_HZ: Serial.println("50 Hz"); break;
+    case LIS3DH_DATARATE_100_HZ: Serial.println("100 Hz"); break;
+    case LIS3DH_DATARATE_200_HZ: Serial.println("200 Hz"); break;
+    case LIS3DH_DATARATE_400_HZ: Serial.println("400 Hz"); break;
+
+    case LIS3DH_DATARATE_POWERDOWN: Serial.println("Powered Down"); break;
+    case LIS3DH_DATARATE_LOWPOWER_5KHZ: Serial.println("5 Khz Low Power"); break;
+    case LIS3DH_DATARATE_LOWPOWER_1K6HZ: Serial.println("16 Khz Low Power"); break;
+  }
+
+
+}
+
+
+void loop() {
+
+ lis.read();      // get X Y and Z data at once
+
+ Serial.print(i++);Serial.print("|||");
+  /*
+  // Then print out the raw data
+  Serial.print("X:  "); Serial.print(lis.x);
+  Serial.print("  \tY:  "); Serial.print(lis.y);*/
+  //Serial.print("  \tZ:  "); 
+  Serial.print(lis.z); 
+
+  /* Or....get a new sensor event, normalized */
+  sensors_event_t event;
+  lis.getEvent(&event);
+
+  
+  /* Display the results (acceleration is measured in m/s^2) */
+  /*
+  Serial.print("\t\tX: "); Serial.print(event.acceleration.x);
+  Serial.print(" \tY: "); Serial.print(event.acceleration.y);*/
+  Serial.print(" \tZ: "); Serial.print(event.acceleration.z);
+  Serial.println(" m/s^2 ");
+ 
+  acc[2] = lis.z;
+
+  accZCharacteristic.setValue(itoa(acc[2], cstr, 10)); // sending value to the characteristic. can only send one character
+  //3 denotes the no of bytes. Here 3 because of 3 byte array
+  accZCharacteristic.notify();
+
+  //delay(1000); //sampling rate 200 Hz
+}
